@@ -35,10 +35,14 @@ object RetrofitBuilder {
         builder.build()
     }
 
-    fun getInstance(): Retrofit {
-        return Retrofit.Builder().baseUrl(BASE_URL)
+    private val retrofitInstance: Retrofit by lazy {
+        Retrofit.Builder().baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
+
+    fun <T> createService(serviceClass: Class<T>): T {
+        return retrofitInstance.create(serviceClass)
     }
 }

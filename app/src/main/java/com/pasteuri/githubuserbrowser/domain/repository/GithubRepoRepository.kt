@@ -2,16 +2,18 @@ package com.pasteuri.githubuserbrowser.domain.repository
 
 import com.pasteuri.githubuserbrowser.domain.model.GithubRepo
 import com.pasteuri.githubuserbrowser.domain.model.User
+import kotlinx.coroutines.flow.Flow
 
 interface GithubRepoRepository {
-    suspend fun getRepoByUser(
-        user: User,
+    fun getRepoByUser(
+        username: String,
+        type: User.Type,
         perPage: Int?,
         page: Int?,
         filterType: ListFilterType?,
         sort: ListSort?,
         order: ListOrder?
-    ): Result<List<GithubRepo>>
+    ): Flow<Result<List<GithubRepo>>>
 
     enum class ListFilterType {
         ALL, PUBLIC, PRIVATE, FORKS, SOURCES, MEMBER, OWNER

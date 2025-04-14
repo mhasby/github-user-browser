@@ -1,17 +1,18 @@
 package com.pasteuri.githubuserbrowser.domain.repository
 
 import com.pasteuri.githubuserbrowser.domain.model.User
+import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
-    suspend fun searchUsers(
+    fun searchUsers(
         query: String,
         perPage: Int?,
         page: Int?,
         sort: SearchUserSort?,
         order: SearchOrder?
-    ): Result<List<User>>
+    ): Flow<Result<List<User>>>
 
-    suspend fun getUserDetail(id: Long): Result<User>
+    suspend fun getUserDetail(username: String): Result<User>
 
     enum class SearchUserSort {
         FOLLOWERS, REPOSITORIES, JOINED

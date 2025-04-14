@@ -1,0 +1,25 @@
+package com.pasteuri.githubuserbrowser.domain.di
+
+import com.pasteuri.githubuserbrowser.domain.repository.GithubRepoRepository
+import com.pasteuri.githubuserbrowser.domain.repository.UserRepository
+import com.pasteuri.githubuserbrowser.domain.usecase.GetUserDetailUseCase
+import com.pasteuri.githubuserbrowser.domain.usecase.SearchUsersUseCase
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+
+@Module
+@InstallIn(SingletonComponent::class) // TODO: change it view model scope
+object DefaultDomainModule {
+
+    @Provides
+    fun provideSearchUsersUseCase(userRepository: UserRepository): SearchUsersUseCase =
+        SearchUsersUseCase(userRepository)
+
+    @Provides
+    fun provideGetUserDetailUseCase(
+        userRepository: UserRepository,
+        githubRepoRepository: GithubRepoRepository
+    ): GetUserDetailUseCase = GetUserDetailUseCase(userRepository, githubRepoRepository)
+}

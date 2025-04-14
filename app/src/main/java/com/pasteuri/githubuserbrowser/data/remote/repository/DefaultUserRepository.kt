@@ -8,6 +8,8 @@ import com.pasteuri.githubuserbrowser.domain.model.User
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository.SearchOrder
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository.SearchUserSort
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class DefaultUserRepository(
     userService: () -> UserService,
@@ -16,14 +18,15 @@ class DefaultUserRepository(
     private val userService by lazy(userService)
     private val searchService by lazy(searchService)
 
-    override suspend fun searchUsers(
+    // TODO: change it to use jetpack pagination
+    override fun searchUsers(
         query: String,
         perPage: Int?,
         page: Int?,
         sort: SearchUserSort?,
         order: SearchOrder?
-    ): Result<List<User>> {
-        return try {
+    ): Flow<Result<List<User>>> = flow {
+        try {
             val sortQuery = when(sort) {
                 null -> null
                 else -> sort.name.lowercase()
@@ -34,16 +37,16 @@ class DefaultUserRepository(
             }
             val result = searchService.searchUsers(query, perPage, page, sortQuery, orderQuery)
             Log.d("TESTT", "result search user success size = ${result.items?.size}")
-            Result.success(result.items?.map { it.toDomain() }.orEmpty())
+            emit(Result.success(result.items?.map { it.toDomain() }.orEmpty()))
         } catch (e: Exception) {
             Log.d("TESTT", "result error : $e")
-            Result.failure(e)
+            emit(Result.failure(e))
         }
     }
 
-    override suspend fun getUserDetail(id: Long): Result<User> {
+    override suspend fun getUserDetail(username: String): Result<User> {
         return try {
-            val result = userService.getUser(id)
+            val result = userService.getUser(username)
             Log.d("TESTT", "result get detail success : $result")
             Result.success(result.toDomain())
         } catch (e: Exception) {

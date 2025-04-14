@@ -1,7 +1,6 @@
 package com.pasteuri.githubuserbrowser
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,30 +16,33 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.pasteuri.githubuserbrowser.data.remote.RetrofitBuilder
-import com.pasteuri.githubuserbrowser.data.remote.repository.DefaultGithubRepoRepository
-import com.pasteuri.githubuserbrowser.data.remote.repository.DefaultUserRepository
-import com.pasteuri.githubuserbrowser.data.remote.service.GithubRepoService
-import com.pasteuri.githubuserbrowser.data.remote.service.SearchService
-import com.pasteuri.githubuserbrowser.data.remote.service.UserService
 import com.pasteuri.githubuserbrowser.domain.model.GithubRepo
 import com.pasteuri.githubuserbrowser.domain.model.User
+import com.pasteuri.githubuserbrowser.domain.model.UserDetailResult
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository
+import com.pasteuri.githubuserbrowser.domain.usecase.GetUserDetailUseCase
+import com.pasteuri.githubuserbrowser.domain.usecase.SearchUsersUseCase
 import com.pasteuri.githubuserbrowser.ui.theme.GithubUserBrowserTheme
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var searchUsersUseCase: SearchUsersUseCase
+
+    @Inject
+    lateinit var getUserDetailUseCase: GetUserDetailUseCase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             GithubUserBrowserTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    Greeting(searchUsersUseCase, getUserDetailUseCase, Modifier.padding(innerPadding))
                 }
             }
         }
@@ -48,34 +50,47 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun Greeting(
+    searchUsersUseCase: SearchUsersUseCase,
+    getUserDetailUseCase: GetUserDetailUseCase,
+    modifier: Modifier = Modifier
+) {
+    var users: List<User> by remember { mutableStateOf(emptyList()) }
     var userProfile: User? by remember { mutableStateOf(null) }
     var orgProfile: User? by remember { mutableStateOf(null) }
     var userRepoList: List<GithubRepo> by remember { mutableStateOf(emptyList()) }
     var orgRepoList: List<GithubRepo> by remember { mutableStateOf(emptyList()) }
 
     LaunchedEffect(Unit) {
-        val userRepository = DefaultUserRepository(
-            {RetrofitBuilder.getInstance().create(UserService::class.java)},
-            {RetrofitBuilder.getInstance().create(SearchService::class.java)}
-        )
-        val githubRepoRepository = DefaultGithubRepoRepository(
-            {RetrofitBuilder.getInstance().create(GithubRepoService::class.java)}
-        )
-        val usersResult = userRepository.searchUsers("lapak", 50, 1, sort = UserRepository.SearchUserSort.JOINED, order = null)
-        usersResult.getOrNull()?.let { users ->
-            Log.d("TESTT", "User")
-            users.filter { it.type == User.Type.USER }.getOrNull(0)?.let { user ->
-                userProfile = userRepository.getUserDetail(user.id).getOrNull()
-                userRepoList = githubRepoRepository.getRepoByUser(user, 2, 1, null, null, null).getOrNull().orEmpty()
+        searchUsersUseCase(
+            query = "lapak",
+            searchUserSort = UserRepository.SearchUserSort.JOINED,
+            searchOrder = null
+        ).collect {
+            users = it.getOrNull().orEmpty()
+        }
+    }
+    LaunchedEffect(users) {
+        users.filter { it.type == User.Type.USER }.getOrNull(0)?.let { user ->
+            getUserDetailUseCase(user.username, user.type).collect { result ->
+                when (result) {
+                    is UserDetailResult.UserLoaded -> userProfile = result.user
+                    is UserDetailResult.RepositoriesLoaded -> userRepoList = result.repos
+                    else -> Unit
+                }
             }
-            Log.d("TESTT", "Org")
-            users.filter { it.type == User.Type.ORG }.getOrNull(3)?.let { user ->
-                orgProfile = userRepository.getUserDetail(user.id).getOrNull()
-                orgRepoList = githubRepoRepository.getRepoByUser(user, 2, 1, null, null, null).getOrNull().orEmpty()
+        }
+        users.filter { it.type == User.Type.ORG }.getOrNull(3)?.let { user ->
+            getUserDetailUseCase(user.username, user.type).collect { result ->
+                when (result) {
+                    is UserDetailResult.UserLoaded -> orgProfile = result.user
+                    is UserDetailResult.RepositoriesLoaded -> orgRepoList = result.repos
+                    else -> Unit
+                }
             }
         }
     }
+
     Column(
         modifier = modifier
     ) {
@@ -93,18 +108,10 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             text = "Org",
             modifier = Modifier.padding(top = 20.dp)
         )
-        Text(text = userProfile?.username.orEmpty())
+        Text(text = orgProfile?.username.orEmpty())
         Text(text = "Org repos")
         orgRepoList.forEach {
             Text(text = it.name)
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    GithubUserBrowserTheme {
-        Greeting("Android")
     }
 }
