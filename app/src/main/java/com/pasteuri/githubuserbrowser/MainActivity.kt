@@ -5,9 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -17,12 +15,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.pasteuri.githubuserbrowser.domain.model.GithubRepo
 import com.pasteuri.githubuserbrowser.domain.model.User
 import com.pasteuri.githubuserbrowser.domain.model.UserDetailResult
-import com.pasteuri.githubuserbrowser.domain.repository.UserRepository
 import com.pasteuri.githubuserbrowser.domain.usecase.GetUserDetailUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.SearchUsersUseCase
+import com.pasteuri.githubuserbrowser.ui.screen.home.HomeScreen
 import com.pasteuri.githubuserbrowser.ui.theme.GithubUserBrowserTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -40,10 +41,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            GithubUserBrowserTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(searchUsersUseCase, getUserDetailUseCase, Modifier.padding(innerPadding))
-                }
+            GithubUserBrowserApp()
+        }
+    }
+}
+
+@Composable
+fun GithubUserBrowserApp() {
+    GithubUserBrowserTheme {
+        val navController = rememberNavController()
+        NavHost(navController, startDestination = GithubUserBrowserNavigation.HOME_ROUTE) {
+            composable(GithubUserBrowserNavigation.HOME_ROUTE) {
+                HomeScreen(navController)
             }
         }
     }
@@ -61,15 +70,6 @@ fun Greeting(
     var userRepoList: List<GithubRepo> by remember { mutableStateOf(emptyList()) }
     var orgRepoList: List<GithubRepo> by remember { mutableStateOf(emptyList()) }
 
-    LaunchedEffect(Unit) {
-        searchUsersUseCase(
-            query = "lapak",
-            searchUserSort = UserRepository.SearchUserSort.JOINED,
-            searchOrder = null
-        ).collect {
-            users = it.getOrNull().orEmpty()
-        }
-    }
     LaunchedEffect(users) {
         users.filter { it.type == User.Type.USER }.getOrNull(0)?.let { user ->
             getUserDetailUseCase(user.username, user.type).collect { result ->

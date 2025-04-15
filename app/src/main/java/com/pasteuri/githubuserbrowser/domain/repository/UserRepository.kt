@@ -1,16 +1,16 @@
 package com.pasteuri.githubuserbrowser.domain.repository
 
+import com.pasteuri.githubuserbrowser.domain.model.PaginationResult
 import com.pasteuri.githubuserbrowser.domain.model.User
-import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
-    fun searchUsers(
+    suspend fun searchUsers(
         query: String,
         perPage: Int?,
         page: Int?,
         sort: SearchUserSort?,
         order: SearchOrder?
-    ): Flow<Result<List<User>>>
+    ): Result<PaginationResult<User>>
 
     suspend fun getUserDetail(username: String): Result<User>
 
