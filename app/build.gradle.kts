@@ -42,7 +42,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -55,6 +54,8 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.paging.common.android)
     implementation(libs.androidx.paging.compose.android)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network)
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation)
     implementation(libs.okhttp3.logging)

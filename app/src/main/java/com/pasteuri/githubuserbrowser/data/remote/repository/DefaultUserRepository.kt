@@ -23,6 +23,7 @@ class DefaultUserRepository(
         sort: SearchUserSort?,
         order: SearchOrder?
     ): Result<PaginationResult<User>> {
+        if (query.isBlank()) return Result.success(PaginationResult(0, null, emptyList()))
         return try {
             val sortQuery = when(sort) {
                 null -> null

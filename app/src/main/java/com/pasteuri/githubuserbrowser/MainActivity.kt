@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,9 +51,15 @@ class MainActivity : ComponentActivity() {
 fun GithubUserBrowserApp() {
     GithubUserBrowserTheme {
         val navController = rememberNavController()
-        NavHost(navController, startDestination = GithubUserBrowserNavigation.HOME_ROUTE) {
-            composable(GithubUserBrowserNavigation.HOME_ROUTE) {
-                HomeScreen(navController)
+        Scaffold { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = GithubUserBrowserNavigation.HOME_ROUTE,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(GithubUserBrowserNavigation.HOME_ROUTE) {
+                    HomeScreen(navController)
+                }
             }
         }
     }
