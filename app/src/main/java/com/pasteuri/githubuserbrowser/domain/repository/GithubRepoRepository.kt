@@ -16,12 +16,12 @@ interface GithubRepoRepository {
     ): Result<PaginationResult<GithubRepo>>
 
     enum class ListFilterType {
-        ALL, PUBLIC, PRIVATE, FORKS, SOURCES, MEMBER, OWNER
+        ALL, PUBLIC, FORKS, SOURCES, MEMBER, OWNER
     }
     enum class ListSort {
-        CREATED, UPDATED, PUSHED, FULL_NAME
+        PUSHED, CREATED, UPDATED, FULL_NAME
     }
     enum class ListOrder {
-        ASC, DESC
+        DESC, ASC
     }
 }

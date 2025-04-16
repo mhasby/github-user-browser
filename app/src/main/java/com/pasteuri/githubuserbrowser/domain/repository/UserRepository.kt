@@ -18,6 +18,6 @@ interface UserRepository {
         FOLLOWERS, REPOSITORIES, JOINED
     }
     enum class SearchOrder {
-        ASC, DESC
+        DESC, ASC
     }
 }

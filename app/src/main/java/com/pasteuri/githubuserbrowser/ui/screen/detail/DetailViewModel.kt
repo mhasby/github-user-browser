@@ -9,6 +9,9 @@ import com.google.gson.Gson
 import com.pasteuri.githubuserbrowser.UserDetailArg
 import com.pasteuri.githubuserbrowser.domain.model.GithubRepo
 import com.pasteuri.githubuserbrowser.domain.model.User
+import com.pasteuri.githubuserbrowser.domain.repository.GithubRepoRepository.ListFilterType
+import com.pasteuri.githubuserbrowser.domain.repository.GithubRepoRepository.ListOrder
+import com.pasteuri.githubuserbrowser.domain.repository.GithubRepoRepository.ListSort
 import com.pasteuri.githubuserbrowser.domain.usecase.GetGithubRepoByUserUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.GetUserDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -45,6 +48,17 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    fun applyListOption(filterType: ListFilterType, sort: ListSort, order: ListOrder) {
+        _uiState.update {
+            it.copy(
+                repoListFilter = filterType,
+                repoListSort = sort,
+                repoListOrder = order
+            )
+        }
+        viewModelScope.launch { getGithubRepo() }
+    }
+
     private suspend fun getUserDetail() {
         _uiState.update { it.copy(isLoadingUser = true) }
         val result = getUserDetailUseCase(userArg?.username.orEmpty())
@@ -70,7 +84,10 @@ class DetailViewModel @Inject constructor(
     private suspend fun getGithubRepo() {
         getGithubRepoByUserUseCase(
             username = userArg?.username.orEmpty(),
-            type = userArg?.type ?: User.Type.USER
+            type = userArg?.type ?: User.Type.USER,
+            filterType = _uiState.value.repoListFilter,
+            sort = _uiState.value.repoListSort,
+            order = _uiState.value.repoListOrder
         )
             .distinctUntilChanged()
             .cachedIn(viewModelScope)
@@ -84,4 +101,7 @@ data class DetailUiState(
     val isLoadingUser: Boolean = false,
     val errorUserDetail: Throwable? = null,
     val user: User? = null,
+    val repoListFilter: ListFilterType = ListFilterType.ALL,
+    val repoListSort: ListSort = ListSort.PUSHED,
+    val repoListOrder: ListOrder = ListOrder.DESC,
 )

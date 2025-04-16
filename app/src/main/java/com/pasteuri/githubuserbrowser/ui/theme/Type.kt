@@ -21,6 +21,15 @@ private val defaultTypography = Typography()
 
 // Set of Material typography styles to start with
 val Typography = Typography(
+    headlineLarge = defaultTypography.headlineLarge.copy(
+        fontFamily = fontFamily,
+    ),
+    headlineMedium = defaultTypography.headlineMedium.copy(
+        fontFamily = fontFamily,
+    ),
+    headlineSmall = defaultTypography.headlineSmall.copy(
+        fontFamily = fontFamily,
+    ),
     displayLarge = defaultTypography.displayLarge.copy(
         fontFamily = fontFamily,
     ),

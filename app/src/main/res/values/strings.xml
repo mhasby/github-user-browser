@@ -16,4 +16,10 @@
     <string name="error_detail_action">Retry</string>
     <string name="error_repo_web_title">Failed to load page</string>
     <string name="error_repo_web_desc">We couldn\'t open the repository page. Please check your connection and try again.</string>
+    <string name="empty_repo_title">No repositories yet</string>
+    <string name="empty_repo_desc">Looks like this user hasn’t shared any public repositories.</string>
+    <string name="option_filter">Filter</string>
+    <string name="option_sort">Sort</string>
+    <string name="option_order">Order</string>
+    <string name="option_apply">Apply</string>
 </resources>

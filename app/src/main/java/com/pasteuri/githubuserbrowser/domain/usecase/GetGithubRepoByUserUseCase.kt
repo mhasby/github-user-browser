@@ -20,13 +20,16 @@ class GetGithubRepoByUserUseCase(
     operator fun invoke(
         username: String,
         type: User.Type,
+        filterType: GithubRepoRepository.ListFilterType,
+        sort: GithubRepoRepository.ListSort,
+        order: GithubRepoRepository.ListOrder
     ): Flow<PagingData<GithubRepo>> {
         return Pager(
             config = PagingConfig(pageSize = SEARCH_PER_PAGE, prefetchDistance = 2),
             pagingSourceFactory = {
                 RepositoriesPagingSource { page ->
                     githubRepoRepository.getRepoByUser(
-                        username, type, null, page, null, null, null
+                        username, type, SEARCH_PER_PAGE, page, filterType, sort, order
                     )
                 }
             }

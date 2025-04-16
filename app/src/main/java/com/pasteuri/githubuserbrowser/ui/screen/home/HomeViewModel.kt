@@ -59,6 +59,18 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun applyListOption(sort: SearchUserSort, order: SearchOrder) {
+        _uiState.update {
+            it.copy(
+                searchSort = sort,
+                searchOrder = order
+            )
+        }
+        viewModelScope.launch {
+            searchUsers(uiState.value.searchInput)
+        }
+    }
+
     companion object {
         private const val SEARCH_INPUT_DELAY = 500L
     }
@@ -66,6 +78,6 @@ class HomeViewModel @Inject constructor(
 
 data class HomeUiState(
     val searchInput: String = "",
-    val searchSort: SearchUserSort? = null,
-    val searchOrder: SearchOrder? = null,
+    val searchSort: SearchUserSort = SearchUserSort.FOLLOWERS,
+    val searchOrder: SearchOrder = SearchOrder.DESC,
 )
