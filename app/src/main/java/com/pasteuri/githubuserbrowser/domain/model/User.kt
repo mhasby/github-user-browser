@@ -5,6 +5,7 @@ data class User(
     val username: String,
     val type: Type,
     val name: String,
+    val bio: String,
     val followers: Int,
     val avatarUrl: String,
     val following: Int,

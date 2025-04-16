@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">Github User Browser</string>
+    <string name="search_placeholder">Type to search Github user</string>
+    <string name="initial_search_title">Wanna stalk a developer?</string>
+    <string name="initial_search_desc">Start typing their name. We promise it\'s totally legal.</string>
+    <string name="initial_search_action">Let\'s Go Stalking!</string>
+    <string name="error_search_title">Whoops..</string>
+    <string name="error_search_desc">Something went wrong. Please check your connection and retry your stalking.</string>
+    <string name="error_search_action">Let\'s Try That Again</string>
+    <string name="error_append_list_title">Failed to load more items.</string>
+    <string name="error_append_list_action">Retry</string>
+    <string name="profile_follower">Follower : %1$d</string>
+    <string name="profile_following">Following : %1$d</string>
+    <string name="error_detail_title">Couldn\'t load repositories</string>
+    <string name="error_detail_desc">Something went wrong while fetching the repository list. Please try again.</string>
+    <string name="error_detail_action">Retry</string>
+    <string name="error_repo_web_title">Failed to load page</string>
+    <string name="error_repo_web_desc">We couldn\'t open the repository page. Please check your connection and try again.</string>
 </resources>

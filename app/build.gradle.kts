@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.paging.common.android)
     implementation(libs.androidx.paging.compose.android)
+    implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.coil.compose)
     implementation(libs.coil.network)
     implementation(libs.hilt.android)

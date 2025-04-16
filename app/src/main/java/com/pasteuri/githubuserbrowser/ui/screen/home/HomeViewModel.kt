@@ -33,12 +33,11 @@ class HomeViewModel @Inject constructor(
     private var debounceJob: Job? = null
 
     fun searchUsers(query: String) {
+        debounceJob?.cancel()
         if (query.isBlank()) {
             clearQuery()
             return
         }
-
-        debounceJob?.cancel()
         _uiState.update { state ->
             state.copy(searchInput = query)
         }

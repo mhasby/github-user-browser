@@ -19,7 +19,7 @@ object RetrofitBuilder {
             val request = chain.request()
                 .newBuilder()
                 .addHeader("X-GitHub-Api-Version", "2022-11-28")
-                .addHeader("Authorization", "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")
+                .addHeader("Authorization", "Bearer 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")
                 .build()
             chain.proceed(request)
         }

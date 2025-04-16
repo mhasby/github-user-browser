@@ -61,6 +61,7 @@ data class UserResponse(
 fun UserResponse.toDomain() = User(
     id = id?.toLong() ?: 0L,
     username = login.orEmpty(),
+    bio = bio.orEmpty(),
     avatarUrl = avatarUrl.orEmpty(),
     name = name.orEmpty(),
     followers = followers ?: 0,
