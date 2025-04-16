@@ -1,29 +1,18 @@
 package com.pasteuri.githubuserbrowser
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.pasteuri.githubuserbrowser.domain.model.GithubRepo
-import com.pasteuri.githubuserbrowser.domain.model.User
-import com.pasteuri.githubuserbrowser.domain.model.UserDetailResult
 import com.pasteuri.githubuserbrowser.domain.usecase.GetUserDetailUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.SearchUsersUseCase
+import com.pasteuri.githubuserbrowser.ui.screen.detail.DetailScreen
+import com.pasteuri.githubuserbrowser.ui.screen.detail.RepoDetailWebView
 import com.pasteuri.githubuserbrowser.ui.screen.home.HomeScreen
 import com.pasteuri.githubuserbrowser.ui.theme.GithubUserBrowserTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -51,74 +40,22 @@ class MainActivity : ComponentActivity() {
 fun GithubUserBrowserApp() {
     GithubUserBrowserTheme {
         val navController = rememberNavController()
-        Scaffold { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = GithubUserBrowserNavigation.HOME_ROUTE,
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                composable(GithubUserBrowserNavigation.HOME_ROUTE) {
-                    HomeScreen(navController)
-                }
+        NavHost(
+            navController = navController,
+            startDestination = GithubUserBrowserNavigation.HomeRoute.routeName,
+        ) {
+            composable(GithubUserBrowserNavigation.HomeRoute.routeName) {
+                HomeScreen(navController)
             }
-        }
-    }
-}
-
-@Composable
-fun Greeting(
-    searchUsersUseCase: SearchUsersUseCase,
-    getUserDetailUseCase: GetUserDetailUseCase,
-    modifier: Modifier = Modifier
-) {
-    var users: List<User> by remember { mutableStateOf(emptyList()) }
-    var userProfile: User? by remember { mutableStateOf(null) }
-    var orgProfile: User? by remember { mutableStateOf(null) }
-    var userRepoList: List<GithubRepo> by remember { mutableStateOf(emptyList()) }
-    var orgRepoList: List<GithubRepo> by remember { mutableStateOf(emptyList()) }
-
-    LaunchedEffect(users) {
-        users.filter { it.type == User.Type.USER }.getOrNull(0)?.let { user ->
-            getUserDetailUseCase(user.username, user.type).collect { result ->
-                when (result) {
-                    is UserDetailResult.UserLoaded -> userProfile = result.user
-                    is UserDetailResult.RepositoriesLoaded -> userRepoList = result.repos
-                    else -> Unit
-                }
+            composable(
+                GithubUserBrowserNavigation.DetailRoute.routeName) {
+                DetailScreen(navController)
             }
-        }
-        users.filter { it.type == User.Type.ORG }.getOrNull(3)?.let { user ->
-            getUserDetailUseCase(user.username, user.type).collect { result ->
-                when (result) {
-                    is UserDetailResult.UserLoaded -> orgProfile = result.user
-                    is UserDetailResult.RepositoriesLoaded -> orgRepoList = result.repos
-                    else -> Unit
-                }
+            composable(GithubUserBrowserNavigation.GithubRepoRoute.routeName) { backStackEntry ->
+                val title = backStackEntry.arguments?.getString("title").orEmpty()
+                val url = Uri.decode(backStackEntry.arguments?.getString("url").orEmpty())
+                RepoDetailWebView(title, url, navController)
             }
-        }
-    }
-
-    Column(
-        modifier = modifier
-    ) {
-        Text(
-            text = "User",
-            modifier = Modifier.padding(top = 20.dp)
-        )
-        Text(text = userProfile?.username.orEmpty())
-        Text(text = "User repos")
-        userRepoList.forEach {
-            Text(text = it.name)
-        }
-
-        Text(
-            text = "Org",
-            modifier = Modifier.padding(top = 20.dp)
-        )
-        Text(text = orgProfile?.username.orEmpty())
-        Text(text = "Org repos")
-        orgRepoList.forEach {
-            Text(text = it.name)
         }
     }
 }

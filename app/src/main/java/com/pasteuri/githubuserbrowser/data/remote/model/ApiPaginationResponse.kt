@@ -3,6 +3,7 @@ package com.pasteuri.githubuserbrowser.data.remote.model
 import android.net.Uri
 import com.google.gson.annotations.SerializedName
 import com.pasteuri.githubuserbrowser.domain.model.PaginationResult
+import okhttp3.Headers
 
 data class ApiPaginationResponse<out S : Any>(
     @SerializedName("total_count")
@@ -14,17 +15,16 @@ data class ApiPaginationResponse<out S : Any>(
 )
 
 fun <S : Any, D : Any> ApiPaginationResponse<S>.toDomain(
-    headerLink: String?,
+    headers: Headers,
     itemMapper: (S) -> D
 ) = PaginationResult(
     total = totalCount ?: 0,
-    nextPage = parseNextPage(headerLink),
+    nextPage = headers.parseNextPage(),
     items = items?.map { itemMapper(it) }.orEmpty()
 )
 
-private fun parseNextPage(linkHeader: String?): Int? {
-    if (linkHeader == null) return null
-
+fun Headers.parseNextPage(): Int? {
+    val linkHeader = this["Link"] ?: return null
     val links = linkHeader.split(",")
     for (link in links) {
         val parts = link.split(";")

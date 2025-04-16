@@ -36,7 +36,7 @@ class DefaultUserRepository(
             val result = searchService.searchUsers(query, perPage, page, sortQuery, orderQuery)
             val resultBody = result.body() ?: return Result.failure(Exception())
             Result.success(
-                resultBody.toDomain(headerLink = result.headers()["Link"]) { item ->
+                resultBody.toDomain(result.headers()) { item ->
                     item.toDomain()
                 }
             )

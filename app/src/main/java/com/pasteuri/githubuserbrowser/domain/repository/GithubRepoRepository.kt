@@ -1,11 +1,11 @@
 package com.pasteuri.githubuserbrowser.domain.repository
 
 import com.pasteuri.githubuserbrowser.domain.model.GithubRepo
+import com.pasteuri.githubuserbrowser.domain.model.PaginationResult
 import com.pasteuri.githubuserbrowser.domain.model.User
-import kotlinx.coroutines.flow.Flow
 
 interface GithubRepoRepository {
-    fun getRepoByUser(
+    suspend fun getRepoByUser(
         username: String,
         type: User.Type,
         perPage: Int?,
@@ -13,7 +13,7 @@ interface GithubRepoRepository {
         filterType: ListFilterType?,
         sort: ListSort?,
         order: ListOrder?
-    ): Flow<Result<List<GithubRepo>>>
+    ): Result<PaginationResult<GithubRepo>>
 
     enum class ListFilterType {
         ALL, PUBLIC, PRIVATE, FORKS, SOURCES, MEMBER, OWNER

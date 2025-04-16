@@ -1,6 +1,7 @@
 package com.pasteuri.githubuserbrowser.data.remote.service
 
 import com.pasteuri.githubuserbrowser.data.remote.model.GithubRepoResponse
+import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -15,7 +16,7 @@ interface GithubRepoService {
         @Query("type") type: String? = null,
         @Query("sort") sort: String? = null,
         @Query("order") order: String? = null
-    ): List<GithubRepoResponse>
+    ): Response<List<GithubRepoResponse>>
 
     @GET("users/{username}/repos")
     suspend fun getUserRepositories(
@@ -25,5 +26,5 @@ interface GithubRepoService {
         @Query("type") type: String? = null,
         @Query("sort") sort: String? = null,
         @Query("order") order: String? = null
-    ): List<GithubRepoResponse>
+    ): Response<List<GithubRepoResponse>>
 }

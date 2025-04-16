@@ -1,21 +1,19 @@
 package com.pasteuri.githubuserbrowser.data.remote.repository
 
-import android.util.Log
+import com.pasteuri.githubuserbrowser.data.remote.model.parseNextPage
 import com.pasteuri.githubuserbrowser.data.remote.model.toDomain
 import com.pasteuri.githubuserbrowser.data.remote.service.GithubRepoService
 import com.pasteuri.githubuserbrowser.domain.model.GithubRepo
+import com.pasteuri.githubuserbrowser.domain.model.PaginationResult
 import com.pasteuri.githubuserbrowser.domain.model.User
 import com.pasteuri.githubuserbrowser.domain.repository.GithubRepoRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 class DefaultGithubRepoRepository(
     githubRepoService: () -> GithubRepoService
 ) : GithubRepoRepository {
     private val service by lazy(githubRepoService)
 
-    // TODO: change it to use jetpack pagination
-    override fun getRepoByUser(
+    override suspend fun getRepoByUser(
         username: String,
         type: User.Type,
         perPage: Int?,
@@ -23,8 +21,8 @@ class DefaultGithubRepoRepository(
         filterType: GithubRepoRepository.ListFilterType?,
         sort: GithubRepoRepository.ListSort?,
         order: GithubRepoRepository.ListOrder?
-    ): Flow<Result<List<GithubRepo>>> = flow {
-        try {
+    ): Result<PaginationResult<GithubRepo>> {
+        return try {
             val filterTypeQuery = when(filterType) {
                 null -> null
                 else -> filterType.name.lowercase()
@@ -41,11 +39,16 @@ class DefaultGithubRepoRepository(
                 User.Type.USER -> service.getUserRepositories(username, perPage, page, filterTypeQuery, sortQuery, orderQuery)
                 User.Type.ORG -> service.getOrgRepositories(username, perPage, page, filterTypeQuery, sortQuery, orderQuery)
             }
-            Log.d("TESTT", "result get repo success size = ${result.size}")
-            emit(Result.success(result.map { it.toDomain() }))
+            val resultBody = result.body() ?: return Result.failure(Exception())
+            Result.success(
+                PaginationResult(
+                    total = 0,
+                    nextPage = result.headers().parseNextPage(),
+                    items = resultBody.map { it.toDomain() }
+                )
+            )
         } catch (e: Exception) {
-            Log.d("TESTT", "result get repo error : $e")
-            emit(Result.failure(e))
+            Result.failure(e)
         }
     }
 }

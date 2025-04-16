@@ -2,6 +2,7 @@ package com.pasteuri.githubuserbrowser.domain.di
 
 import com.pasteuri.githubuserbrowser.domain.repository.GithubRepoRepository
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository
+import com.pasteuri.githubuserbrowser.domain.usecase.GetGithubRepoByUserUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.GetUserDetailUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.SearchUsersUseCase
 import dagger.Module
@@ -19,7 +20,11 @@ object DefaultDomainModule {
 
     @Provides
     fun provideGetUserDetailUseCase(
-        userRepository: UserRepository,
+        userRepository: UserRepository
+    ): GetUserDetailUseCase = GetUserDetailUseCase(userRepository)
+
+    @Provides
+    fun provideGetGithubRepoByUserUseCase(
         githubRepoRepository: GithubRepoRepository
-    ): GetUserDetailUseCase = GetUserDetailUseCase(userRepository, githubRepoRepository)
+    ): GetGithubRepoByUserUseCase = GetGithubRepoByUserUseCase(githubRepoRepository)
 }

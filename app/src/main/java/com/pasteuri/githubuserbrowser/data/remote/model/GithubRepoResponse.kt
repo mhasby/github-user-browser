@@ -70,7 +70,7 @@ fun GithubRepoResponse.toDomain() = GithubRepo(
     name = name.orEmpty(),
     fullName = fullName.orEmpty(),
     description = description.orEmpty(),
-    url = url.orEmpty(),
+    url = htmlUrl.orEmpty(),
     language = language.orEmpty(),
     stars = stargazersCount ?: 0
 )
