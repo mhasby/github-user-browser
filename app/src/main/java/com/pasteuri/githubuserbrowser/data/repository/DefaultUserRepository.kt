@@ -1,17 +1,26 @@
-package com.pasteuri.githubuserbrowser.data.remote.repository
+package com.pasteuri.githubuserbrowser.data.repository
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.pasteuri.githubuserbrowser.data.remote.model.toDomain
 import com.pasteuri.githubuserbrowser.data.remote.service.SearchService
 import com.pasteuri.githubuserbrowser.data.remote.service.UserService
 import com.pasteuri.githubuserbrowser.domain.model.PaginationResult
 import com.pasteuri.githubuserbrowser.domain.model.User
+import com.pasteuri.githubuserbrowser.domain.model.VisitedUser
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository.SearchOrder
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository.SearchUserSort
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class DefaultUserRepository(
     userService: () -> UserService,
-    searchService: () -> SearchService
+    searchService: () -> SearchService,
+    private val dataStore: DataStore<Preferences>
 ) : UserRepository {
     private val userService by lazy(userService)
     private val searchService by lazy(searchService)
@@ -52,5 +61,37 @@ class DefaultUserRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun cacheVisitedUser(visitedUser: VisitedUser, limit: Int) {
+        dataStore.updateData { prefs ->
+            val currentList = getCachedUsers(prefs)
+            val newList = (listOf(visitedUser) + currentList.filter { it.username != visitedUser.username })
+                .take(limit)
+
+            prefs.toMutablePreferences().apply {
+                this[VISITED_USERS_KEY] = json.encodeToString(newList)
+            }
+        }
+    }
+
+    override fun getCachedVisitedUsers(limit: Int): Flow<List<VisitedUser>> {
+        return dataStore.data.map { prefs ->
+            getCachedUsers(prefs).take(limit)
+        }
+    }
+
+    private fun getCachedUsers(prefs: Preferences): List<VisitedUser> {
+        val jsonString = prefs[VISITED_USERS_KEY]
+        return jsonString?.let {
+            runCatching {
+                json.decodeFromString<List<VisitedUser>>(it)
+            }.getOrDefault(emptyList())
+        } ?: emptyList()
+    }
+
+    companion object {
+        private val VISITED_USERS_KEY = stringPreferencesKey("visited_users")
+        private val json = Json { ignoreUnknownKeys = true }
     }
 }

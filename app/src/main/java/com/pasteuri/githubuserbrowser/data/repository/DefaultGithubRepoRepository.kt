@@ -1,4 +1,4 @@
-package com.pasteuri.githubuserbrowser.data.remote.repository
+package com.pasteuri.githubuserbrowser.data.repository
 
 import com.pasteuri.githubuserbrowser.data.remote.model.parseNextPage
 import com.pasteuri.githubuserbrowser.data.remote.model.toDomain

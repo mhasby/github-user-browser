@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.pasteuri.githubuserbrowser.domain.model.User
+import com.pasteuri.githubuserbrowser.domain.model.VisitedUser
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository.SearchOrder
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository.SearchUserSort
+import com.pasteuri.githubuserbrowser.domain.usecase.CacheVisitedUserUseCase
+import com.pasteuri.githubuserbrowser.domain.usecase.GetCachedVisitedUsersUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.SearchUsersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +24,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val searchUsersUseCase: SearchUsersUseCase
+    private val searchUsersUseCase: SearchUsersUseCase,
+    private val getCachedVisitedUsersUseCase: GetCachedVisitedUsersUseCase,
+    private val cacheVisitedUserUseCase: CacheVisitedUserUseCase
 ) : ViewModel() {
 
     private val _usersResultState: MutableStateFlow<PagingData<User>> = MutableStateFlow(value = PagingData.empty())
@@ -29,6 +34,17 @@ class HomeViewModel @Inject constructor(
 
     private val _uiState: MutableStateFlow<HomeUiState> = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> get() = _uiState
+
+    init {
+        viewModelScope.launch {
+            getCachedVisitedUsersUseCase()
+                .collect { itemList ->
+                    _uiState.update {
+                        it.copy(cachedVisitedUsers = itemList)
+                    }
+                }
+        }
+    }
 
     private var debounceJob: Job? = null
 
@@ -71,6 +87,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun cacheVisitedUser(visitedUser: VisitedUser) = viewModelScope.launch {
+        cacheVisitedUserUseCase(visitedUser)
+    }
+
     companion object {
         private const val SEARCH_INPUT_DELAY = 500L
     }
@@ -80,4 +100,5 @@ data class HomeUiState(
     val searchInput: String = "",
     val searchSort: SearchUserSort = SearchUserSort.FOLLOWERS,
     val searchOrder: SearchOrder = SearchOrder.DESC,
+    val cachedVisitedUsers: List<VisitedUser> = emptyList()
 )

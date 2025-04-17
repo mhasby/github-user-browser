@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
 }
 
@@ -46,6 +47,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -59,6 +61,7 @@ dependencies {
     implementation(libs.coil.network)
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp3.logging)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.retrofit.core)

@@ -2,6 +2,8 @@ package com.pasteuri.githubuserbrowser.domain.di
 
 import com.pasteuri.githubuserbrowser.domain.repository.GithubRepoRepository
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository
+import com.pasteuri.githubuserbrowser.domain.usecase.CacheVisitedUserUseCase
+import com.pasteuri.githubuserbrowser.domain.usecase.GetCachedVisitedUsersUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.GetGithubRepoByUserUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.GetUserDetailUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.SearchUsersUseCase
@@ -27,4 +29,14 @@ object DefaultDomainModule {
     fun provideGetGithubRepoByUserUseCase(
         githubRepoRepository: GithubRepoRepository
     ): GetGithubRepoByUserUseCase = GetGithubRepoByUserUseCase(githubRepoRepository)
+
+    @Provides
+    fun provideGetCachedVisitedUsersUseCase(
+        userRepository: UserRepository
+    ): GetCachedVisitedUsersUseCase = GetCachedVisitedUsersUseCase(userRepository)
+
+    @Provides
+    fun provideCacheVisitedUserUseCase(
+        userRepository: UserRepository
+    ): CacheVisitedUserUseCase = CacheVisitedUserUseCase(userRepository)
 }

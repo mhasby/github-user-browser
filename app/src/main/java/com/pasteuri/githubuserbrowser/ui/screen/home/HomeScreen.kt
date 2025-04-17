@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -64,6 +65,7 @@ import com.pasteuri.githubuserbrowser.GithubUserBrowserNavigation
 import com.pasteuri.githubuserbrowser.R
 import com.pasteuri.githubuserbrowser.UserDetailArg
 import com.pasteuri.githubuserbrowser.domain.model.User
+import com.pasteuri.githubuserbrowser.domain.model.VisitedUser
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository.SearchOrder
 import com.pasteuri.githubuserbrowser.domain.repository.UserRepository.SearchUserSort
 import com.pasteuri.githubuserbrowser.ui.component.EmptyLayout
@@ -106,6 +108,30 @@ fun HomeScreen(navController: NavHostController) {
                 onValueChange = { viewModel.searchUsers(it) },
                 onClear = { viewModel.clearQuery() }
             )
+            AnimatedVisibility(visible = uiState.cachedVisitedUsers.isNotEmpty() && userPagingItems.itemCount == 0) {
+                Column {
+                    Text(
+                        "Recently visited user",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .8f),
+                        modifier = Modifier.padding(start = 20.dp, top = 12.dp, end = 16.dp)
+                    )
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        items(uiState.cachedVisitedUsers.size) { index ->
+                            val user = uiState.cachedVisitedUsers[index]
+                            VisitedUserItem(user) {
+                                viewModel.cacheVisitedUser(user)
+                                navController.navigate(
+                                    GithubUserBrowserNavigation.DetailRoute.createRoute(
+                                        UserDetailArg(user.username, user.type)
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             PullToRefreshBox(
                 isRefreshing = userPagingItems.loadState.refresh is LoadState.Loading,
                 onRefresh = { userPagingItems.refresh() },
@@ -138,6 +164,7 @@ fun HomeScreen(navController: NavHostController) {
                             val user = userPagingItems[index]
                             UserItem(user, onClick = {
                                 user?.let {
+                                    viewModel.cacheVisitedUser(VisitedUser(it.username, it.type, it.avatarUrl))
                                     navController.navigate(
                                         GithubUserBrowserNavigation.DetailRoute.createRoute(
                                             UserDetailArg(it.username, it.type)
@@ -200,6 +227,43 @@ private fun UserItem(
             text = user?.username.orEmpty(),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = .8f)
+        )
+    }
+}
+
+@Composable
+private fun VisitedUserItem(
+    user: VisitedUser,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(10.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = .3f),
+                shape = RoundedCornerShape(10.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+    ) {
+        AsyncImage(
+            model = user.avatarUrl,
+            contentDescription = null,
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = user.username,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .8f)
         )
     }
 }
