@@ -23,14 +23,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -40,7 +40,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +50,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -71,9 +72,9 @@ import com.pasteuri.githubuserbrowser.domain.repository.UserRepository.SearchUse
 import com.pasteuri.githubuserbrowser.ui.component.EmptyLayout
 import com.pasteuri.githubuserbrowser.ui.component.InfiniteScrollAppendLoadState
 import com.pasteuri.githubuserbrowser.ui.component.OptionSelections
+import com.pasteuri.githubuserbrowser.ui.component.UserShimmer
 import com.pasteuri.githubuserbrowser.util.reformatEnum
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavHostController) {
     val viewModel = hiltViewModel<HomeViewModel>()
@@ -91,12 +92,17 @@ fun HomeScreen(navController: NavHostController) {
                 visible = uiState.searchInput.isNotBlank() && userPagingItems.itemCount > 0
             ) {
                 FloatingActionButton(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary,
                     shape = CircleShape,
                     onClick = {
                         showDialog.value = true
                     }
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = null)
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_sort),
+                        contentDescription = "Sort"
+                    )
                 }
             }
         },
@@ -106,9 +112,11 @@ fun HomeScreen(navController: NavHostController) {
                 text = uiState.searchInput,
                 focusRequester = focusRequester,
                 onValueChange = { viewModel.searchUsers(it) },
-                onClear = { viewModel.clearQuery() }
+                onClear = { viewModel.clearQuery() },
+                onSearch = { viewModel.searchUsers(query = it, withDelay = false) }
             )
-            AnimatedVisibility(visible = uiState.cachedVisitedUsers.isNotEmpty() && userPagingItems.itemCount == 0) {
+            AnimatedVisibility(visible = uiState.cachedVisitedUsers.isNotEmpty() &&
+                    userPagingItems.itemCount == 0 && userPagingItems.loadState.refresh != LoadState.Loading) {
                 Column {
                     Text(
                         "Recently visited user",
@@ -132,47 +140,50 @@ fun HomeScreen(navController: NavHostController) {
                     }
                 }
             }
-            PullToRefreshBox(
-                isRefreshing = userPagingItems.loadState.refresh is LoadState.Loading,
-                onRefresh = { userPagingItems.refresh() },
-                modifier = Modifier.fillMaxSize()
-            ) {
-                if (userPagingItems.loadState.isIdle && uiState.searchInput.isBlank()) {
-                    EmptyLayout(
-                        title = stringResource(R.string.initial_search_title),
-                        description = stringResource(R.string.initial_search_desc),
-                        action = stringResource(R.string.initial_search_action),
-                        actionIcon = Icons.Default.Search
-                    ) {
-                        focusRequester.requestFocus()
+
+            if (userPagingItems.loadState.isIdle && uiState.searchInput.isBlank()) {
+                EmptyLayout(
+                    title = stringResource(R.string.initial_search_title),
+                    description = stringResource(R.string.initial_search_desc),
+                    action = stringResource(R.string.initial_search_action),
+                    actionIcon = Icons.Default.Search
+                ) {
+                    focusRequester.requestFocus()
+                }
+            } else if (userPagingItems.loadState.refresh is LoadState.Loading) {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    repeat(3) {
+                        UserShimmer()
                     }
-                } else if (userPagingItems.loadState.refresh is LoadState.Error) {
-                    EmptyLayout(
-                        title = stringResource(R.string.error_search_title),
-                        description = stringResource(R.string.error_search_desc),
-                        action = stringResource(R.string.error_search_action),
-                        actionIcon = Icons.Default.Refresh,
-                        actionColor = MaterialTheme.colorScheme.error
-                    ) {
-                        userPagingItems.retry()
-                    }
-                } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(vertical = 8.dp)
-                    ) {
-                        items(userPagingItems.itemCount) { index ->
-                            val user = userPagingItems[index]
-                            UserItem(user, onClick = {
-                                user?.let {
-                                    viewModel.cacheVisitedUser(VisitedUser(it.username, it.type, it.avatarUrl))
-                                    navController.navigate(
-                                        GithubUserBrowserNavigation.DetailRoute.createRoute(
-                                            UserDetailArg(it.username, it.type)
-                                        )
+                }
+            } else if (userPagingItems.loadState.refresh is LoadState.Error) {
+                EmptyLayout(
+                    title = stringResource(R.string.error_search_title),
+                    description = stringResource(R.string.error_search_desc),
+                    action = stringResource(R.string.error_search_action),
+                    actionIcon = Icons.Default.Refresh,
+                    actionColor = MaterialTheme.colorScheme.error
+                ) {
+                    userPagingItems.retry()
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    items(userPagingItems.itemCount) { index ->
+                        val user = userPagingItems[index]
+                        UserItem(user, onClick = {
+                            user?.let {
+                                viewModel.cacheVisitedUser(VisitedUser(it.username, it.type, it.avatarUrl))
+                                navController.navigate(
+                                    GithubUserBrowserNavigation.DetailRoute.createRoute(
+                                        UserDetailArg(it.username, it.type)
                                     )
-                                }
-                            })
-                        }
+                                )
+                            }
+                        })
+                    }
+                    if (userPagingItems.itemCount > 0) {
                         item {
                             InfiniteScrollAppendLoadState(userPagingItems.loadState.append) {
                                 userPagingItems.retry()
@@ -218,7 +229,7 @@ private fun UserItem(
         ) {
             AsyncImage(
                 model = user?.avatarUrl,
-                contentDescription = null,
+                contentDescription = "Avatar",
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -254,7 +265,7 @@ private fun VisitedUserItem(
     ) {
         AsyncImage(
             model = user.avatarUrl,
-            contentDescription = null,
+            contentDescription = "Avatar",
             modifier = Modifier
                 .size(28.dp)
                 .clip(CircleShape)
@@ -273,7 +284,8 @@ private fun SearchTextField(
     text: String,
     focusRequester: FocusRequester,
     onValueChange: (String) -> Unit,
-    onClear: () -> Unit
+    onClear: () -> Unit,
+    onSearch: (String) -> Unit
 ) {
     OutlinedTextField(
         value = text,
@@ -289,15 +301,21 @@ private fun SearchTextField(
         leadingIcon = {
             Icon(
                 Icons.Default.Search,
-                contentDescription = null,
+                contentDescription = "Search icon",
             )
         },
+        keyboardOptions = KeyboardOptions.Default.copy(
+            imeAction = ImeAction.Search
+        ),
+        keyboardActions = KeyboardActions(onSearch = {
+            onSearch(text)
+        }),
         trailingIcon = {
             if (text.isNotBlank()) {
                 Icon(
                     Icons.Default.Clear,
                     tint = MaterialTheme.colorScheme.surface,
-                    contentDescription = null,
+                    contentDescription = "Clear search query",
                     modifier = Modifier
                         .size(20.dp)
                         .background(

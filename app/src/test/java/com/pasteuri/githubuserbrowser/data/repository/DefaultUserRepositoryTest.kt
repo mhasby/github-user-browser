@@ -94,7 +94,7 @@ class DefaultUserRepositoryTest {
             MockResponse()
                 .setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
-                .setHeader("Link", "<https://api.github.com/search/users?q=test&page=2>; rel=\"next\"")
+                .setHeader("Link", "<https://api.github.com/search/users?q=test&per_page=20&page=1&sort=followers&order=desc>; rel=\"prev\", <https://api.github.com/search/users?q=test&per_page=20&page=3&sort=followers&order=desc>; rel=\"next\", <https://api.github.com/search/users?q=test&per_page=20&page=50&sort=followers&order=desc>; rel=\"last\", <https://api.github.com/search/users?q=test&per_page=20&page=1&sort=followers&order=desc>; rel=\"first\"")
                 .setBody(jsonResponse)
         )
 
@@ -115,7 +115,7 @@ class DefaultUserRepositoryTest {
         assertTrue(result.isSuccess)
         val paginationResult = result.getOrNull()!!
         assertEquals(1, paginationResult.total)
-        assertEquals(2, paginationResult.nextPage)
+        assertEquals(3, paginationResult.nextPage)
         assertEquals(1, paginationResult.items.size)
         with(paginationResult.items[0]) {
             assertEquals(123L, id)

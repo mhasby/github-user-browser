@@ -1,5 +1,7 @@
 package com.pasteuri.githubuserbrowser.data.remote
 
+import com.pasteuri.githubuserbrowser.BuildConfig
+import okhttp3.CacheControl
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -16,33 +18,47 @@ object RetrofitBuilder {
 
     private val headerInterceptor: Interceptor by lazy {
         Interceptor { chain ->
-            val request = chain.request()
+            val requestBuilder = chain.request()
                 .newBuilder()
                 .addHeader("X-GitHub-Api-Version", "2022-11-28")
-                .addHeader("Authorization", "Bearer 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")
-                .build()
+                .addHeader("Accept", "application/vnd.github.v3+json")
+            if (BuildConfig.ACCESS_TOKEN.isNotBlank()) {
+                requestBuilder.addHeader("Authorization", "Bearer ${BuildConfig.ACCESS_TOKEN}")
+            }
+            val request = requestBuilder.build()
             chain.proceed(request)
         }
     }
 
-    private val okHttpClient: OkHttpClient by lazy {
-        val builder = OkHttpClient.Builder()
+    val cacheInterceptor: Interceptor by lazy {
+        Interceptor { chain ->
+            val response = chain.proceed(chain.request())
+            val cacheControl = CacheControl.Builder()
+                .maxAge(3, TimeUnit.MINUTES)
+                .build()
+            response.newBuilder()
+                .header("Cache-Control", cacheControl.toString())
+                .build()
+        }
+    }
+
+    val okHttpBuilder: OkHttpClient.Builder by lazy {
+        OkHttpClient.Builder()
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
             .addInterceptor(headerInterceptor)
             .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-        builder.build()
     }
 
-    private val retrofitInstance: Retrofit by lazy {
+    val okHttpClient: OkHttpClient by lazy {
+        okHttpBuilder.build()
+    }
+
+    val retrofitInstance: (OkHttpClient) -> Retrofit = {
         Retrofit.Builder().baseUrl(BASE_URL)
-            .client(okHttpClient)
+            .client(it)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-    }
-
-    fun <T> createService(serviceClass: Class<T>): T {
-        return retrofitInstance.create(serviceClass)
     }
 }

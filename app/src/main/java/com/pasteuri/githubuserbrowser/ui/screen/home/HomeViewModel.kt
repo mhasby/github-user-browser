@@ -36,7 +36,7 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> get() = _uiState
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             getCachedVisitedUsersUseCase()
                 .collect { itemList ->
                     _uiState.update {
@@ -48,7 +48,7 @@ class HomeViewModel @Inject constructor(
 
     private var debounceJob: Job? = null
 
-    fun searchUsers(query: String) {
+    fun searchUsers(query: String, withDelay: Boolean = true) {
         debounceJob?.cancel()
         if (query.isBlank()) {
             clearQuery()
@@ -58,7 +58,7 @@ class HomeViewModel @Inject constructor(
             state.copy(searchInput = query)
         }
         debounceJob = viewModelScope.launch(Dispatchers.IO) {
-            delay(SEARCH_INPUT_DELAY)
+            if (withDelay) delay(SEARCH_INPUT_DELAY)
             searchUsersUseCase(query, uiState.value.searchSort, uiState.value.searchOrder)
                 .distinctUntilChanged()
                 .cachedIn(viewModelScope)
@@ -82,12 +82,12 @@ class HomeViewModel @Inject constructor(
                 searchOrder = order
             )
         }
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             searchUsers(uiState.value.searchInput)
         }
     }
 
-    fun cacheVisitedUser(visitedUser: VisitedUser) = viewModelScope.launch {
+    fun cacheVisitedUser(visitedUser: VisitedUser) = viewModelScope.launch(Dispatchers.IO) {
         cacheVisitedUserUseCase(visitedUser)
     }
 

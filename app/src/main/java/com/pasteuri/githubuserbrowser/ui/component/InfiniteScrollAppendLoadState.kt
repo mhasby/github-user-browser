@@ -68,7 +68,7 @@ fun InfiniteScrollAppendLoadState(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Default.Refresh,
-                            contentDescription = null,
+                            contentDescription = "Refresh",
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))

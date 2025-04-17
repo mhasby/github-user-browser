@@ -38,7 +38,7 @@ class SearchUsersUseCase(
     }
 
     companion object {
-        private const val SEARCH_PER_PAGE = 20
+        private const val SEARCH_PER_PAGE = 25
     }
 }
 
