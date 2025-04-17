@@ -1,9 +1,9 @@
 package com.pasteuri.githubuserbrowser.data.remote.model
 
-import android.net.Uri
 import com.google.gson.annotations.SerializedName
 import com.pasteuri.githubuserbrowser.domain.model.PaginationResult
 import okhttp3.Headers
+import java.net.URL
 
 data class ApiPaginationResponse<out S : Any>(
     @SerializedName("total_count")
@@ -30,11 +30,16 @@ fun Headers.parseNextPage(): Int? {
         val parts = link.split(";")
         if (parts.size < 2) continue
         val urlPart = parts[0].trim().removePrefix("<").removeSuffix(">")
-        val relPart = parts[1].trim()
-
-        if (relPart == "rel=\"next\"") {
-            val uri = Uri.parse(urlPart)
-            return uri.getQueryParameter("page")?.toIntOrNull()
+        try {
+            val url = URL(urlPart)
+            val query = url.query
+            query?.split("&")?.forEach { param ->
+                if (param.startsWith("page=")) {
+                    return param.removePrefix("page=").toIntOrNull()
+                }
+            }
+        } catch (e: Exception) {
+            return null
         }
     }
     return null
