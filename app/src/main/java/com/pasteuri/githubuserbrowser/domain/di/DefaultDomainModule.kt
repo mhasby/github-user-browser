@@ -13,7 +13,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
 @Module
-@InstallIn(SingletonComponent::class) // TODO: change it view model scope
+@InstallIn(SingletonComponent::class)
 object DefaultDomainModule {
 
     @Provides

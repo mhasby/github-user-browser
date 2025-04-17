@@ -63,7 +63,7 @@ fun EmptyLayout(
                     actionIcon?.let { icon ->
                         Icon(
                             icon,
-                            contentDescription = null,
+                            contentDescription = "Empty layout action",
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))

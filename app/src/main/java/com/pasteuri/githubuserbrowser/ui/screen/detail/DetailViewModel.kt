@@ -15,6 +15,7 @@ import com.pasteuri.githubuserbrowser.domain.repository.GithubRepoRepository.Lis
 import com.pasteuri.githubuserbrowser.domain.usecase.GetGithubRepoByUserUseCase
 import com.pasteuri.githubuserbrowser.domain.usecase.GetUserDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,7 +43,7 @@ class DetailViewModel @Inject constructor(
     val reposResultState: StateFlow<PagingData<GithubRepo>> = _reposResultState.asStateFlow()
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             launch { getUserDetail() }
             launch { getGithubRepo() }
         }

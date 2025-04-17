@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
@@ -37,7 +36,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -77,6 +76,7 @@ import com.pasteuri.githubuserbrowser.domain.repository.GithubRepoRepository.Lis
 import com.pasteuri.githubuserbrowser.ui.component.EmptyLayout
 import com.pasteuri.githubuserbrowser.ui.component.InfiniteScrollAppendLoadState
 import com.pasteuri.githubuserbrowser.ui.component.OptionSelections
+import com.pasteuri.githubuserbrowser.ui.component.RepoShimmer
 import com.pasteuri.githubuserbrowser.util.reformatEnum
 import io.flutter.embedding.android.FlutterActivity
 
@@ -92,6 +92,7 @@ fun DetailScreen(navController: NavController) {
     val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val isAppBarCollapsed = remember { derivedStateOf { scrollBehavior.state.collapsedFraction > 0.5 } }
     val showDialog = remember { mutableStateOf(false) }
     val showLoadingFlutter = remember { mutableStateOf(false) }
 
@@ -106,18 +107,23 @@ fun DetailScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            UserDetailAppBar(uiState.user, scrollBehavior) {
+            UserDetailAppBar(uiState.user, scrollBehavior, isAppBarCollapsed.value) {
                 navController.popBackStack()
             }
         },
         floatingActionButton = {
             FloatingActionButton(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
                 shape = CircleShape,
                 onClick = {
                     showDialog.value = true
                 }
             ) {
-                Icon(Icons.AutoMirrored.Filled.List, contentDescription = null)
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_sort),
+                    contentDescription = "Sort"
+                )
             }
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -127,7 +133,7 @@ fun DetailScreen(navController: NavController) {
                 .padding(contentPadding)
                 .fillMaxSize()
         ) {
-            if ((uiState.user?.publicGistCount ?: 0) > 0) {
+            if ((uiState.user?.publicGistCount ?: 0) > 0 && !isAppBarCollapsed.value) {
                 GistSection(uiState.user, showLoadingFlutter.value) {
                     showLoadingFlutter.value = true
                     context.startActivity(
@@ -139,48 +145,52 @@ fun DetailScreen(navController: NavController) {
                 }
             }
 
-            PullToRefreshBox(
-                isRefreshing = reposPagingItems.loadState.refresh is LoadState.Loading,
-                onRefresh = { reposPagingItems.refresh() },
-                modifier = Modifier.fillMaxSize()
-            ) {
-                if (reposPagingItems.loadState.isIdle && reposPagingItems.itemCount == 0) {
-                    EmptyLayout(
-                        title = stringResource(R.string.empty_repo_title),
-                        description = stringResource(R.string.empty_repo_desc),
-                    )
-                } else if (reposPagingItems.loadState.refresh is LoadState.Error) {
-                    EmptyLayout(
-                        title = stringResource(R.string.error_detail_title),
-                        description = stringResource(R.string.error_detail_desc),
-                        action = stringResource(R.string.error_detail_action),
-                        actionIcon = Icons.Default.Refresh,
-                        actionColor = MaterialTheme.colorScheme.error
-                    ) {
-                        reposPagingItems.retry()
+            if (reposPagingItems.loadState.isIdle && reposPagingItems.itemCount == 0) {
+                EmptyLayout(
+                    title = stringResource(R.string.empty_repo_title),
+                    description = stringResource(R.string.empty_repo_desc),
+                )
+            } else if (reposPagingItems.loadState.refresh is LoadState.Loading) {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    repeat(3) {
+                        RepoShimmer()
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.surfaceContainer
+                        )
                     }
-                } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(vertical = 8.dp)
-                    ) {
-                        items(reposPagingItems.itemCount) { index ->
-                            RepositoryItem(reposPagingItems[index]) {
-                                navController.navigate(
-                                    GithubUserBrowserNavigation.GithubRepoRoute.createRoute(
-                                        title = reposPagingItems[index]?.name.orEmpty(),
-                                        url = reposPagingItems[index]?.url.orEmpty(),
-                                    )
+                }
+            } else if (reposPagingItems.loadState.refresh is LoadState.Error) {
+                EmptyLayout(
+                    title = stringResource(R.string.error_detail_title),
+                    description = stringResource(R.string.error_detail_desc),
+                    action = stringResource(R.string.error_detail_action),
+                    actionIcon = Icons.Default.Refresh,
+                    actionColor = MaterialTheme.colorScheme.error
+                ) {
+                    reposPagingItems.retry()
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    items(reposPagingItems.itemCount) { index ->
+                        RepositoryItem(reposPagingItems[index]) {
+                            navController.navigate(
+                                GithubUserBrowserNavigation.GithubRepoRoute.createRoute(
+                                    title = reposPagingItems[index]?.name.orEmpty(),
+                                    url = reposPagingItems[index]?.url.orEmpty(),
                                 )
-                            }
-                            HorizontalDivider(
-                                thickness = 1.dp,
-                                color = MaterialTheme.colorScheme.surfaceContainer
                             )
                         }
-                        item {
-                            InfiniteScrollAppendLoadState(reposPagingItems.loadState.append) {
-                                reposPagingItems.retry()
-                            }
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.surfaceContainer
+                        )
+                    }
+                    item {
+                        InfiniteScrollAppendLoadState(reposPagingItems.loadState.append) {
+                            reposPagingItems.retry()
                         }
                     }
                 }
@@ -246,6 +256,7 @@ private fun RepositoryItem(
 ) {
     Column(
         modifier = Modifier
+            .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(vertical = 16.dp, horizontal = 24.dp)
     ) {
@@ -280,7 +291,7 @@ private fun RepositoryItem(
             Icon(
                 Icons.Default.Star,
                 tint = Color(0xFFF3A257),
-                contentDescription = null,
+                contentDescription = "Star",
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
@@ -297,10 +308,9 @@ private fun RepositoryItem(
 private fun UserDetailAppBar(
     user: User?,
     scrollBehavior: TopAppBarScrollBehavior,
+    isCollapsed: Boolean,
     onBackClick: () -> Unit
 ) {
-    val isCollapsed = remember { derivedStateOf { scrollBehavior.state.collapsedFraction > 0.5 } }
-
     LargeTopAppBar(
         scrollBehavior = scrollBehavior,
         expandedHeight = 190.dp,
@@ -310,7 +320,7 @@ private fun UserDetailAppBar(
             }
         },
         title = {
-            Column {
+            Column(modifier = Modifier.padding(end = 16.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -319,7 +329,7 @@ private fun UserDetailAppBar(
                         contentDescription = "Avatar",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(if(isCollapsed.value) 40.dp else 48.dp)
+                            .size(if(isCollapsed) 40.dp else 48.dp)
                             .clip(CircleShape)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -328,9 +338,9 @@ private fun UserDetailAppBar(
                             text = user?.username.orEmpty(),
                             style = MaterialTheme.typography.titleLarge
                         )
-                        if (!isCollapsed.value) {
+                        if (!isCollapsed) {
                             Text(
-                                text = user?.name.orEmpty(),
+                                text = user?.name.takeIf { it.isNullOrBlank() } ?: "-",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -349,7 +359,7 @@ private fun UserDetailAppBar(
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                if (!isCollapsed.value && !user?.bio.isNullOrBlank()) {
+                if (!isCollapsed && !user?.bio.isNullOrBlank()) {
                     Text(
                         text = user?.bio.orEmpty(),
                         maxLines = 2,

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("kotlin-kapt")
     alias(libs.plugins.android.application)
@@ -6,6 +8,16 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
 }
+
+fun loadEnvFile(): Properties {
+    val properties = Properties()
+    val envFile = rootProject.file(".env")
+    if (envFile.exists()) {
+        envFile.inputStream().use { properties.load(it) }
+    }
+    return properties
+}
+val envProps = loadEnvFile()
 
 android {
     namespace = "com.pasteuri.githubuserbrowser"
@@ -24,6 +36,11 @@ android {
             // Filter for architectures supported by Flutter
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
         }
+        buildConfigField("String", "ACCESS_TOKEN", "\"${envProps["ACCESS_TOKEN"]}\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

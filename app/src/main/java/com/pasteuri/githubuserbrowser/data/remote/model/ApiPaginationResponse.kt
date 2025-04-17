@@ -30,6 +30,7 @@ fun Headers.parseNextPage(): Int? {
         val parts = link.split(";")
         if (parts.size < 2) continue
         val urlPart = parts[0].trim().removePrefix("<").removeSuffix(">")
+        if (!parts[1].contains("next")) continue
         try {
             val url = URL(urlPart)
             val query = url.query
