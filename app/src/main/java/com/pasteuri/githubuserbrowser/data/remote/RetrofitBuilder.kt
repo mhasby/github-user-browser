@@ -42,7 +42,7 @@ object RetrofitBuilder {
         }
     }
 
-    val okHttpBuilder: OkHttpClient.Builder by lazy {
+    val okHttpBuilder: () -> OkHttpClient.Builder = {
         OkHttpClient.Builder()
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
@@ -52,7 +52,7 @@ object RetrofitBuilder {
     }
 
     val okHttpClient: OkHttpClient by lazy {
-        okHttpBuilder.build()
+        okHttpBuilder().build()
     }
 
     val retrofitInstance: (OkHttpClient) -> Retrofit = {

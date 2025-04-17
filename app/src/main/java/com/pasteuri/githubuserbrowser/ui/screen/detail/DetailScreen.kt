@@ -330,9 +330,6 @@ private fun ListOptionsDialog(
     val sortOptions = ListSort.entries.map {
         it to it.name.reformatEnum()
     }
-    val orderOptions = ListOrder.entries.map {
-        it to it.name.reformatEnum()
-    }
     var selectedFilter by remember { mutableStateOf(initialFilter) }
     var selectedSort by remember { mutableStateOf(initialSort) }
     var selectedOrder by remember { mutableStateOf(initialOrder) }
@@ -359,14 +356,6 @@ private fun ListOptionsDialog(
                         )
                         OptionSelections(stringResource(R.string.option_sort), sortOptions, selectedSort) {
                             selectedSort = it
-                        }
-                        HorizontalDivider(
-                            thickness = 1.dp,
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                        OptionSelections(stringResource(R.string.option_order), orderOptions, selectedOrder) {
-                            selectedOrder = it
                         }
                     }
                 }
