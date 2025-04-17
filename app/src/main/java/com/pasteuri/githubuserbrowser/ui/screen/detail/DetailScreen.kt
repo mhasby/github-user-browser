@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -39,6 +40,8 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,11 +53,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.paging.LoadState
@@ -72,16 +78,31 @@ import com.pasteuri.githubuserbrowser.ui.component.EmptyLayout
 import com.pasteuri.githubuserbrowser.ui.component.InfiniteScrollAppendLoadState
 import com.pasteuri.githubuserbrowser.ui.component.OptionSelections
 import com.pasteuri.githubuserbrowser.util.reformatEnum
+import io.flutter.embedding.android.FlutterActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(navController: NavController) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     val viewModel = hiltViewModel<DetailViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val reposPagingItems: LazyPagingItems<GithubRepo> = viewModel.reposResultState.collectAsLazyPagingItems()
+    val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val showDialog = remember { mutableStateOf(false) }
+    val showLoadingFlutter = remember { mutableStateOf(false) }
+
+    LaunchedEffect(lifecycleState) {
+        when (lifecycleState) {
+            Lifecycle.State.RESUMED -> {
+                showLoadingFlutter.value = false
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -106,6 +127,18 @@ fun DetailScreen(navController: NavController) {
                 .padding(contentPadding)
                 .fillMaxSize()
         ) {
+            if ((uiState.user?.publicGistCount ?: 0) > 0) {
+                GistSection(uiState.user, showLoadingFlutter.value) {
+                    showLoadingFlutter.value = true
+                    context.startActivity(
+                        FlutterActivity
+                            .withNewEngine()
+                            .initialRoute("/gists/${uiState.user?.username.orEmpty()}")
+                            .build(context)
+                    )
+                }
+            }
+
             PullToRefreshBox(
                 isRefreshing = reposPagingItems.loadState.refresh is LoadState.Loading,
                 onRefresh = { reposPagingItems.refresh() },
@@ -172,6 +205,41 @@ fun DetailScreen(navController: NavController) {
 }
 
 @Composable
+private fun GistSection(
+    user: User?,
+    showLoading: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = MaterialTheme.colorScheme.secondary)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 20.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.profile_public_gist, user?.publicGistCount ?: 0),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSecondary,
+            modifier = Modifier.weight(1f)
+        )
+        if (showLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                color = MaterialTheme.colorScheme.onSecondary,
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.profile_gist_check),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondary,
+            )
+        }
+    }
+}
+
+@Composable
 private fun RepositoryItem(
     repository: GithubRepo?,
     onClick: () -> Unit
@@ -226,7 +294,7 @@ private fun RepositoryItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserDetailAppBar(
+private fun UserDetailAppBar(
     user: User?,
     scrollBehavior: TopAppBarScrollBehavior,
     onBackClick: () -> Unit

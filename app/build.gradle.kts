@@ -19,6 +19,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            // Filter for architectures supported by Flutter
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+        }
     }
 
     buildTypes {
@@ -48,6 +53,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -65,6 +71,7 @@ dependencies {
     implementation(libs.okhttp3.logging)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.retrofit.core)
+    implementation(project(":flutter"))
     kapt(libs.hilt.compiler)
     testImplementation(libs.junit)
     testImplementation(libs.mockwebserver)

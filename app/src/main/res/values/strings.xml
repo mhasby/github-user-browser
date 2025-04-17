@@ -11,6 +11,8 @@
     <string name="error_append_list_action">Retry</string>
     <string name="profile_follower">Follower : %1$d</string>
     <string name="profile_following">Following : %1$d</string>
+    <string name="profile_public_gist">Public Gists : %1$d</string>
+    <string name="profile_gist_check">Check it out</string>
     <string name="error_detail_title">Couldn\'t load repositories</string>
     <string name="error_detail_desc">Something went wrong while fetching the repository list. Please try again.</string>
     <string name="error_detail_action">Retry</string>
