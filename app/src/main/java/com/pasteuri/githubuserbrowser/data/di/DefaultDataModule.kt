@@ -35,7 +35,7 @@ object DefaultDataModule {
     fun provideCachedOkHttp(@ApplicationContext context: Context): OkHttpClient {
         val cacheSize = 10L * 1024 * 1024 // 10 MB
         val cache = Cache(File(context.cacheDir, "http_cache"), cacheSize)
-        val builder = RetrofitBuilder.okHttpBuilder
+        val builder = RetrofitBuilder.okHttpBuilder()
             .cache(cache)
             .addNetworkInterceptor(RetrofitBuilder.cacheInterceptor)
         return builder.build()
