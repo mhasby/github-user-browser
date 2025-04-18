@@ -1,5 +1,7 @@
 package com.pasteuri.githubuserbrowser.ui.screen.home
 
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -41,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -74,15 +78,36 @@ import com.pasteuri.githubuserbrowser.ui.component.InfiniteScrollAppendLoadState
 import com.pasteuri.githubuserbrowser.ui.component.OptionSelections
 import com.pasteuri.githubuserbrowser.ui.component.UserShimmer
 import com.pasteuri.githubuserbrowser.util.reformatEnum
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
+    val context = LocalContext.current
     val viewModel = hiltViewModel<HomeViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val userPagingItems: LazyPagingItems<User> = viewModel.usersResultState.collectAsLazyPagingItems()
 
     val focusRequester = remember { FocusRequester() }
-    val showDialog = remember { mutableStateOf(false) }
+    var showSortDialog by remember { mutableStateOf(false) }
+    var showBackToExitToast by remember { mutableStateOf(false) }
+    var backPressState by remember { mutableStateOf<BackPress>(BackPress.Idle) }
+
+    if(showBackToExitToast){
+        Toast.makeText(context, stringResource(R.string.back_again_to_exit), Toast.LENGTH_SHORT).show()
+        showBackToExitToast = false
+    }
+
+    LaunchedEffect(backPressState) {
+        if (backPressState == BackPress.InitialTouch) {
+            delay(2500)
+            backPressState = BackPress.Idle
+        }
+    }
+
+    BackHandler(backPressState == BackPress.Idle) {
+        backPressState = BackPress.InitialTouch
+        showBackToExitToast = true
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -96,7 +121,7 @@ fun HomeScreen(navController: NavHostController) {
                     contentColor = MaterialTheme.colorScheme.onSecondary,
                     shape = CircleShape,
                     onClick = {
-                        showDialog.value = true
+                        showSortDialog = true
                     }
                 ) {
                     Icon(
@@ -194,7 +219,7 @@ fun HomeScreen(navController: NavHostController) {
             }
         }
 
-        if (showDialog.value) {
+        if (showSortDialog) {
             ListOptionsDialog (
                 initialSort = uiState.searchSort,
                 initialOrder = uiState.searchOrder,
@@ -202,7 +227,7 @@ fun HomeScreen(navController: NavHostController) {
                     viewModel.applyListOption(listSort, listOrder)
                 },
                 onDismissRequest = {
-                    showDialog.value = false
+                    showSortDialog = false
                 }
             )
         }
@@ -390,4 +415,9 @@ private fun ListOptionsDialog(
             }
         }
     }
+}
+
+sealed class BackPress {
+    data object Idle : BackPress()
+    data object InitialTouch : BackPress()
 }

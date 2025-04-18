@@ -41,7 +41,7 @@ fun <T> OptionSelections(
                     onClick = { onOptionSelected(option.first) },
                     role = Role.RadioButton
                 )
-                .padding(vertical = 4.dp)
+                .padding(vertical = 8.dp)
         ) {
             RadioButton(
                 selected = (option.first == selectedOption),
